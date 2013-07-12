@@ -299,7 +299,11 @@ public class EclipseToMavenMojo
 
     protected String getKey( Model model )
     {
-        return model.getGroupId() + "." + model.getArtifactId(); //$NON-NLS-1$
+    	if (model instanceof ClassifierModel ) {
+    		return model.getGroupId() + "." + model.getArtifactId() + "." + ((ClassifierModel)model).getClassifier(); //$NON-NLS-1$
+    	} else {
+    		return model.getGroupId() + "." + model.getArtifactId();
+    	}
     }
 
     private String getKey( Dependency dependency )
@@ -446,7 +450,6 @@ public class EclipseToMavenMojo
         model.setClassifier(classifier);
         model.setName( name );
         model.setVersion( version );
-        
 
         model.setProperties( plugin.getPomProperties() );
 
@@ -658,7 +661,7 @@ public class EclipseToMavenMojo
      */
     protected String createGroupId( String bundleName )
     {
-    	if (createSourceDeps && bundleName.endsWith(".source")) {
+    	if (bundleName.endsWith(".source")) {
     		bundleName = bundleName.substring(0, bundleName.length() - ".source".length());
     	}
     	
@@ -681,7 +684,7 @@ public class EclipseToMavenMojo
      */
     protected String createArtifactId( String bundleName )
     {
-    	if (createSourceDeps && bundleName.endsWith(".source")) {
+    	if (bundleName.endsWith(".source")) {
     		bundleName = bundleName.substring(0, bundleName.length() - ".source".length());
     	}
     	
@@ -698,7 +701,7 @@ public class EclipseToMavenMojo
     
     protected String createClassifier( String bundleName )
     {
-    	if (createSourceDeps && bundleName.endsWith(".source")) {
+    	if (bundleName.endsWith(".source")) {
     		return "sources";
     	} else {
     		return null;

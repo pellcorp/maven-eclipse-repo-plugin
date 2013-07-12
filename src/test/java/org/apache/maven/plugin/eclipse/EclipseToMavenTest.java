@@ -113,8 +113,14 @@ public class EclipseToMavenTest
         assertEquals( "org.eclipse", mojo.createGroupId( "org.eclipse.jdt" ) );
         assertEquals( "org.eclipse.jdt", mojo.createGroupId( "org.eclipse.jdt.apt" ) );
         assertEquals( "org.eclipse.jdt.apt", mojo.createGroupId( "org.eclipse.jdt.apt.core" ) );
+        assertEquals( "org.eclipse.jdt.apt", mojo.createGroupId( "org.eclipse.jdt.apt.core.source" ) );
     }
 
+    public void testCreateClassifier() {
+    	assertNull( mojo.createClassifier( "test" ) );
+    	assertEquals( "sources", mojo.createClassifier( "org.eclipse.source" ) );
+    }
+    
     /**
      * Test the generation of a artifactId from a bundle symbolic name.
      */
@@ -125,6 +131,7 @@ public class EclipseToMavenTest
         assertEquals( "jdt", mojo.createArtifactId( "org.eclipse.jdt" ) );
         assertEquals( "apt", mojo.createArtifactId( "org.eclipse.jdt.apt" ) );
         assertEquals( "core", mojo.createArtifactId( "org.eclipse.jdt.apt.core" ) );
+        assertEquals( "core", mojo.createArtifactId( "org.eclipse.jdt.apt.core.source" ) );
     }
 
     public void testOsgiVersionToMavenVersion()
