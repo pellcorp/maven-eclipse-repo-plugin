@@ -182,13 +182,6 @@ public class EclipseToMavenMojo
     private boolean ignoreMissingDeps;
     
     /**
-     * Ignore missing dependencies
-     * 
-     * @parameter expression="${ignoreMissingDeps}" default-value="false"
-     */
-    private boolean createSourceDeps;
-    
-    /**
      * @see org.apache.maven.plugin.Mojo#execute()
      */
     public void execute()
@@ -299,8 +292,13 @@ public class EclipseToMavenMojo
 
     protected String getKey( Model model )
     {
-    	if (model instanceof ClassifierModel ) {
-    		return model.getGroupId() + "." + model.getArtifactId() + "." + ((ClassifierModel)model).getClassifier(); //$NON-NLS-1$
+    	if (model instanceof ClassifierModel) {
+    		ClassifierModel classifierModel = (ClassifierModel) model;
+    		if (classifierModel.getClassifier() != null) {
+    			return model.getGroupId() + "." + model.getArtifactId() + "." + ((ClassifierModel)model).getClassifier();
+    		} else {
+    			return model.getGroupId() + "." + model.getArtifactId();
+    		}
     	} else {
     		return model.getGroupId() + "." + model.getArtifactId();
     	}
