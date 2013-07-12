@@ -295,7 +295,7 @@ public class EclipseToMavenMojo
     	if (model instanceof ClassifierModel) {
     		ClassifierModel classifierModel = (ClassifierModel) model;
     		if (classifierModel.getClassifier() != null) {
-    			return model.getGroupId() + "." + model.getArtifactId() + "." + ((ClassifierModel)model).getClassifier();
+    			return model.getGroupId() + "." + model.getArtifactId() + "-" + classifierModel.getClassifier();
     		} else {
     			return model.getGroupId() + "." + model.getArtifactId();
     		}
