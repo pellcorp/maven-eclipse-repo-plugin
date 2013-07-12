@@ -167,6 +167,20 @@ public class EclipseToMavenMojo
     private String deployTo;
 
     /**
+     * Resolve version ranges in generated pom dependencies to versions of the other plugins being converted
+     * 
+     * @parameter expression="${resolveVersionRanges}" default-value="false"
+     */
+    private boolean resolveVersionRanges;
+    
+    /**
+     * Ignore missing dependencies
+     * 
+     * @parameter expression="${ignoreMissingDeps}" default-value="false"
+     */
+    private boolean ignoreMissingDeps;
+    
+    /**
      * @see org.apache.maven.plugin.Mojo#execute()
      */
     public void execute()
@@ -235,6 +249,12 @@ public class EclipseToMavenMojo
             String key = (String) it.next();
             EclipseOsgiPlugin plugin = (EclipseOsgiPlugin) plugins.get( key );
             Model model = (Model) models.get( key );
+            
+            if (resolveVersionRanges)
+            {
+            	resolveVersionRanges( model, models );
+            }
+            
             writeArtifact( plugin, model, remoteRepo );
         }
     }
@@ -292,22 +312,36 @@ public class EclipseToMavenMojo
         for ( Iterator it = model.getDependencies().iterator(); it.hasNext(); )
         {
             Dependency dep = (Dependency) it.next();
+            String key = getKey( model );
+            Model dependencyModel = (Model) models.get( getKey( dep ) );
+            
             if ( dep.getVersion().indexOf( "[" ) > -1
                 || dep.getVersion().indexOf( "(" ) > -1 ) //$NON-NLS-1$ //$NON-NLS-2$
             {
-                String key = getKey( model );
-                Model dependencyModel = (Model) models.get( getKey( dep ) );
                 if ( dependencyModel != null )
                 {
                     dep.setVersion( dependencyModel.getVersion() );
                 }
-                else
+                else 
                 {
-                    throw new MojoFailureException(
-                        Messages.getString( "EclipseToMavenMojo.unabletoresolveversionrange",
-                                            new Object[]{ dep //$NON-NLS-1$
-                                                , key } ) ); //$NON-NLS-1$
+                	String message = Messages.getString( "EclipseToMavenMojo.unabletoresolveversionrange",
+                            new Object[]{ dep //$NON-NLS-1$
+                            , key } ); //$NON-NLS-1$;
+              
+                	if (!ignoreMissingDeps)
+                	{
+                		throw new MojoFailureException(message);
+                	}
+                	else 
+                	{
+                		getLog().warn(message);
+                	}
                 }
+            }
+            else if ( dependencyModel != null && !dep.getVersion().equals(dependencyModel.getVersion()) )
+            {
+            	getLog().warn("Overriding version for artifact " + dep + " to " + dependencyModel.getVersion());
+            	dep.setVersion(dependencyModel.getVersion());
             }
         }
     }
