@@ -18,19 +18,7 @@
  */
 package org.apache.maven.plugin.eclipse;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import aQute.lib.osgi.Analyzer;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.deployer.ArtifactDeployer;
 import org.apache.maven.artifact.deployer.ArtifactDeploymentException;
@@ -62,7 +50,18 @@ import org.codehaus.plexus.personality.plexus.lifecycle.phase.Contextualizable;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 
-import aQute.lib.osgi.Analyzer;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Add eclipse artifacts from an eclipse installation to the local repo. This mojo automatically analize the eclipse
@@ -249,7 +248,7 @@ public class EclipseToMavenMojo
                                                    Integer.valueOf( plugins.keySet().size() ) } ) ); //$NON-NLS-1$
             String key = (String) it.next();
             EclipseOsgiPlugin plugin = (EclipseOsgiPlugin) plugins.get( key );
-            ClassifierModel model = (ClassifierModel) models.get( key );
+            Model model = (Model) models.get( key );
             
             if (resolveVersionRanges)
             {
@@ -282,8 +281,7 @@ public class EclipseToMavenMojo
         processPlugin( plugin, model, plugins, models );
     }
 
-    protected void processPlugin( EclipseOsgiPlugin plugin, 
-    		Model model, Map plugins, Map models )
+    protected void processPlugin( EclipseOsgiPlugin plugin, Model model, Map plugins, Map models )
         throws MojoExecutionException, MojoFailureException
     {
         plugins.put( getKey( model ), plugin );
@@ -292,16 +290,7 @@ public class EclipseToMavenMojo
 
     protected String getKey( Model model )
     {
-    	if (model instanceof ClassifierModel) {
-    		ClassifierModel classifierModel = (ClassifierModel) model;
-    		if (classifierModel.getClassifier() != null) {
-    			return model.getGroupId() + "." + model.getArtifactId() + "-" + classifierModel.getClassifier();
-    		} else {
-    			return model.getGroupId() + "." + model.getArtifactId();
-    		}
-    	} else {
-    		return model.getGroupId() + "." + model.getArtifactId();
-    	}
+        return model.getGroupId() + "." + model.getArtifactId(); //$NON-NLS-1$
     }
 
     private String getKey( Dependency dependency )
@@ -397,7 +386,7 @@ public class EclipseToMavenMojo
         throws MojoExecutionException
     {
 
-        String name, bundleName, version, groupId, artifactId, classifier, requireBundle;
+        String name, bundleName, version, groupId, artifactId, requireBundle;
 
         try
         {
@@ -439,13 +428,11 @@ public class EclipseToMavenMojo
 
         groupId = createGroupId( bundleName );
         artifactId = createArtifactId( bundleName );
-        classifier = createClassifier(bundleName);
-        
-        ClassifierModel model = new ClassifierModel();
+
+        Model model = new Model();
         model.setModelVersion( "4.0.0" ); //$NON-NLS-1$
         model.setGroupId( groupId );
         model.setArtifactId( artifactId );
-        model.setClassifier(classifier);
         model.setName( name );
         model.setVersion( version );
 
@@ -488,7 +475,7 @@ public class EclipseToMavenMojo
      * @param remoteRepo remote repository (if set)
      * @throws MojoExecutionException
      */
-    private void writeArtifact( EclipseOsgiPlugin plugin, ClassifierModel model, ArtifactRepository remoteRepo )
+    private void writeArtifact( EclipseOsgiPlugin plugin, Model model, ArtifactRepository remoteRepo )
         throws MojoExecutionException
     {
         Writer fw = null;
@@ -498,8 +485,8 @@ public class EclipseToMavenMojo
             artifactFactory.createArtifact( model.getGroupId(), model.getArtifactId(), model.getVersion(), null,
                                             "pom" ); //$NON-NLS-1$
         Artifact artifact =
-            artifactFactory.createArtifactWithClassifier( model.getGroupId(), model.getArtifactId(), model.getVersion(), 
-                                            Constants.PROJECT_PACKAGING_JAR, model.getClassifier() );
+            artifactFactory.createArtifact( model.getGroupId(), model.getArtifactId(), model.getVersion(), null,
+                                            Constants.PROJECT_PACKAGING_JAR );
         try
         {
             pomFile = File.createTempFile( "pom-", ".xml" ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -659,10 +646,6 @@ public class EclipseToMavenMojo
      */
     protected String createGroupId( String bundleName )
     {
-    	if (bundleName.endsWith(".source")) {
-    		bundleName = bundleName.substring(0, bundleName.length() - ".source".length());
-    	}
-    	
         int i = bundleName.lastIndexOf( '.' ); //$NON-NLS-1$
         if ( i > 0 )
         {
@@ -682,10 +665,6 @@ public class EclipseToMavenMojo
      */
     protected String createArtifactId( String bundleName )
     {
-    	if (bundleName.endsWith(".source")) {
-    		bundleName = bundleName.substring(0, bundleName.length() - ".source".length());
-    	}
-    	
         int i = bundleName.lastIndexOf( '.' ); //$NON-NLS-1$
         if ( i > 0 )
         {
@@ -696,16 +675,7 @@ public class EclipseToMavenMojo
             return bundleName;
         }
     }
-    
-    protected String createClassifier( String bundleName )
-    {
-    	if (bundleName.endsWith(".source")) {
-    		return "sources";
-    	} else {
-    		return null;
-    	}
-    }
-    
+
     /**
      * Parses the "Require-Bundle" and convert it to a list of dependencies.
      *
@@ -794,4 +764,5 @@ public class EclipseToMavenMojo
 
         return newVersionRange.toString();
     }
+
 }

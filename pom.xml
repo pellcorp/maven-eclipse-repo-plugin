@@ -28,7 +28,7 @@ under the License.
     <relativePath>../maven-plugins/pom.xml</relativePath>
   </parent>
   <artifactId>maven-eclipse-plugin</artifactId>
-  <version>2.10-pellcorp</version>
+  <version>2.11-pellcorp</version>
   <packaging>maven-plugin</packaging>
   <name>Maven Eclipse Plugin</name>
   <description>The Eclipse Plugin is used to generate Eclipse IDE files (.project, .classpath and the .settings folder)
@@ -439,5 +439,17 @@ under the License.
       </plugin>
     </plugins>
   </reporting>
+
+  <distributionManagement>
+		<repository>
+			<id>repo</id>
+			<url>${maven.repo.dir}/releases</url>
+		</repository>
+
+		<snapshotRepository>
+			<id>snapshot-repo</id>
+			<url>${maven.repo.dir}/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 </project>
 
