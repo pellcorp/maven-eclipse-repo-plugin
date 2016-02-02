@@ -1,24 +1,20 @@
 package org.apache.maven.plugin.eclipse;
 
 public class ExtendedModel extends org.apache.maven.model.Model {
-	private String classifier;
+    private boolean isSource;
 
-	public ExtendedModel() {
-	}
+    public ExtendedModel() {
+    }
 
-	public void setClassifier(String classifier) {
-		this.classifier = classifier;
-	}
+    public void setIsSource(boolean isSource) {
+	this.isSource = isSource;
+    }
 
-	public String getClassifier() {
-		return classifier;
-	}
-	
-	public String toString() {
-		if (classifier != null) {
-			return getGroupId() + ":" + getArtifactId() + "-" + classifier;
-		} else {
-			return getGroupId() + ":" + getArtifactId();
-		}
-	}
+    public boolean isSource() {
+	return isSource;
+    }
+    
+    public String toString() {
+	return getGroupId() + ":" + getArtifactId() + ":" + getVersion();
+    }
 }
