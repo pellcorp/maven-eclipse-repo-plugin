@@ -198,16 +198,8 @@ public class EclipseToMavenMojo extends AbstractMojo implements
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
 	if (eclipseDir == null) {
-	    getLog().info("Eclipse directory?");
-
-	    String eclipseDirString;
-	    try {
-		eclipseDirString = inputHandler.readLine();
-	    } catch (IOException e) {
 		throw new MojoFailureException(
-			"Unable to read from standard input");
-	    }
-	    eclipseDir = new File(eclipseDirString);
+			"Eclipse Directory property missing");
 	}
 
 	if (!eclipseDir.isDirectory()) {
@@ -215,20 +207,13 @@ public class EclipseToMavenMojo extends AbstractMojo implements
 		    + eclipseDir.getAbsolutePath() + " doesn't exists");
 	}
 
-	File pluginDir = new File(eclipseDir, "plugins"); //$NON-NLS-1$
+	File pluginDir = new File(eclipseDir, "plugins");
 
 	if (!pluginDir.isDirectory()) {
 	    throw new MojoFailureException("Plugin directory does not exist: "
 		    + pluginDir.getAbsolutePath());
 	}
-
-	List files = new ArrayList();
-	files.addAll(Arrays.asList(pluginDir
-		.listFiles(new EclipsePluginFilenameFilter(false))));
-	// ensure that sources are second
-	files.addAll(Arrays.asList(pluginDir
-		.listFiles(new EclipsePluginFilenameFilter(true))));
-
+	
 	ArtifactRepository remoteRepo = resolveRemoteRepo();
 
 	if (remoteRepo != null) {
@@ -239,18 +224,26 @@ public class EclipseToMavenMojo extends AbstractMojo implements
 	Map plugins = new HashMap();
 	Map models = new HashMap();
 
-	for (int j = 0; j < files.size(); j++) {
-	    File file = (File) files.get(j);
+	File[] files = pluginDir.listFiles(new EclipsePluginFilenameFilter(false));
 
+	for (int j = 0; j < files.length; j++) {
+	    File file = files[j];
 	    getLog().info("Processing file: " + file.getAbsolutePath());
-
+	    processFile(file, plugins, models);
+	}
+	
+	// do sources
+	files = pluginDir.listFiles(new EclipsePluginFilenameFilter(true));
+	
+	for (int j = 0; j < files.length; j++) {
+	    File file = files[j];
+	    getLog().info("Processing source file: " + file.getAbsolutePath());
 	    processFile(file, plugins, models);
 	}
 
 	int i = 1;
 	for (Iterator it = plugins.keySet().iterator(); it.hasNext();) {
-	    getLog().info(
-		    "Processing " + (i++) + " of " + plugins.keySet().size());
+	    getLog().info("Processing " + (i++) + " of " + plugins.keySet().size());
 	    String key = (String) it.next();
 
 	    EclipseOsgiPlugin plugin = (EclipseOsgiPlugin) plugins.get(key);
@@ -263,8 +256,8 @@ public class EclipseToMavenMojo extends AbstractMojo implements
 	    writeArtifact(plugin, model, remoteRepo);
 	}
     }
-
-    protected void processFile(File file,
+    
+    private void processFile(File file,
 	    Map<String, EclipseOsgiPlugin> plugins,
 	    Map<String, ExtendedModel> models) throws MojoExecutionException,
 	    MojoFailureException {
@@ -312,7 +305,7 @@ public class EclipseToMavenMojo extends AbstractMojo implements
     }
 
     private String getKey(Dependency dependency) {
-	return dependency.getGroupId() + "." + dependency.getArtifactId(); //$NON-NLS-1$
+	return dependency.getGroupId() + ":" + dependency.getArtifactId(); //$NON-NLS-1$
     }
 
     private String getKey(ExtendedModel model, boolean ignoreSource) {
@@ -334,11 +327,12 @@ public class EclipseToMavenMojo extends AbstractMojo implements
      * @param models
      * @throws MojoFailureException
      */
-    protected void resolveVersionRanges(ExtendedModel model, Map models)
+    private void resolveVersionRanges(ExtendedModel model, Map models)
 	    throws MojoFailureException {
+	String key = getKey(model, false);
 	for (Iterator it = model.getDependencies().iterator(); it.hasNext();) {
 	    Dependency dep = (Dependency) it.next();
-	    String key = getKey(model, false);
+	    
 	    Model dependencyModel = (Model) models.get(getKey(dep));
 
 	    if (dep.getVersion().indexOf("[") > -1
